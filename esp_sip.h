@@ -73,10 +73,11 @@ struct esp_sip {
         u8 * tx_aggr_buf;
         u8 * tx_aggr_write_ptr;  /* update after insertion of each pkt */
         u8 * tx_aggr_lastpkt_ptr;
-
+#if 0
         u8 * rx_aggr_buf;
         u8 * rx_aggr_write_ptr;
         u8 * rx_aggr_lastpkt_ptr;
+#endif
 
         spinlock_t rx_lock;
         struct sk_buff_head rxq;

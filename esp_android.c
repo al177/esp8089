@@ -232,7 +232,7 @@ struct esp_init_table_elem esp_init_table[MAX_ATTR_NUM] = {
 	{"attr15", 		-1, -1},
 	//attr that is not send to target
 	{"ext_rst",              -1, -1},
-	{"attr17",              -1, -1},
+	{"wakeup_gpio",         -1, -1},
         {"attr18",              -1, -1},
         {"attr19",              -1, -1},
         {"attr20",              -1, -1},
@@ -299,6 +299,10 @@ int android_request_init_conf(void)
         }
 #endif /* INIT_DATA_CONF */
 	conf_buf = (u8 *)kmalloc(MAX_BUF_LEN, GFP_KERNEL);
+        if (conf_buf == NULL) {
+                esp_dbg(ESP_DBG_ERROR, "%s: failed kmalloc memory for read init_data_conf", __func__);
+                return -ENOMEM;
+        }
 
 #ifdef INIT_DATA_CONF
 	if ((ret=android_readwrite_file(filename, conf_buf, NULL, length)) != length) {
@@ -344,6 +348,10 @@ int android_request_init_conf(void)
 				if(strcmp(esp_init_table[i].attr, "ext_rst") == 0){
 					sif_record_rst_config(esp_init_table[i].value);
 				}
+
+				if(strcmp(esp_init_table[i].attr, "wakeup_gpio") == 0){
+					sif_record_wakeup_gpio_config(esp_init_table[i].value);
+				}
 			}
 			str_len = 0;
 			continue;
@@ -366,9 +374,10 @@ int android_request_init_conf(void)
 
 	//show_esp_init_table(esp_init_table);
 
-	return 0;
+	ret = 0;
 failed:
-	kfree(conf_buf);
+	if (conf_buf)
+		kfree(conf_buf);
 	return ret;
 }
 

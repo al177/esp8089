@@ -2,7 +2,6 @@
  *  Copyright (c) 2009- 2012 Espressif System.
  *
  */
-
 #ifndef _ESP_CTRL_H_
 #define _ESP_CTRL_H_
 
@@ -20,11 +19,15 @@ int sip_send_bss_info_update(struct esp_pub *epub, struct esp_vif *evif, u8 *bss
 
 int  sip_send_wmm_params(struct esp_pub *epub, u8 aci, const struct ieee80211_tx_queue_params *params);
 
-int sip_send_ampdu_action(struct esp_pub *epub, u8 action_num, u8 * addr, u16 tid, u16 ssn, u8 buf_size);
+int sip_send_ampdu_action(struct esp_pub *epub, u8 action_num, const u8 * addr, u16 tid, u16 ssn, u8 buf_size);
 
 int sip_send_roc(struct esp_pub *epub, u16 center_freq, u16 duration);
 
-int sip_send_set_sta(struct esp_pub *epub, u8 ifidx, u8 set, struct ieee80211_sta *sta,  struct ieee80211_vif *vif, u8 index);
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28))
+int sip_send_set_sta(struct esp_pub *epub, u8 ifidx, u8 set, struct ieee80211_sta *sta, struct ieee80211_vif *vif, u8 index);
+#else
+int sip_send_set_sta(struct esp_pub *epub, u8 ifidx, u8 set, struct esp_node *node,  struct ieee80211_vif *vif, u8 index);
+#endif
 
 int sip_send_suspend_config(struct esp_pub *epub, u8 suspend);
 

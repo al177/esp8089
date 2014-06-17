@@ -1,4 +1,4 @@
-  config ESP8089
+config ESP8089
       depends on WLAN_80211 && MMC
       select WIRELESS_EXT
       select WEXT_PRIV

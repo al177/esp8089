@@ -11,7 +11,6 @@
 #include <linux/nl80211.h>
 #include <linux/ieee80211.h>
 #include <linux/slab.h>
-#include <net/regulatory.h>
 #include <net/cfg80211.h>
 #include <net/mac80211.h>
 #include <net/genetlink.h>
@@ -22,11 +21,14 @@
 #include "esp_debug.h"
 #include "esp_wl.h"
 #include "testmode.h"
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 31))
+    #include <net/regulatory.h>
+#endif
 
 static u32 connected_nl;
 static struct genl_info info_copy;
-static struct esp_sip *sip_copy;
-static u8 *sdio_buff;
+static struct esp_sip *sip_copy = NULL;
+static u8 *sdio_buff = NULL;
 
 #define SIP sip_copy
 #define OUT_DONE() \
@@ -72,11 +74,11 @@ static void sip_send_test_cmd(struct esp_sip *sip, struct sk_buff *skb)
 {
         skb_queue_tail(&sip->epub->txq, skb);
 
-#ifdef FPGA_LOOPBACK
-        queue_work(sip->epub->esp_wkq, &sip->epub->tx_work);
-#else
+#if  !defined(FPGA_LOOPBACK) && (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 32))
         ieee80211_queue_work(sip->epub->hw, &sip->epub->tx_work);
-#endif /* FPGA_LOOPBACK */
+#else
+        queue_work(sip->epub->esp_wkq, &sip->epub->tx_work);
+#endif
 
 }
 
@@ -286,7 +288,11 @@ static int sip_send_tx_frame(struct esp_sip *sip, u32 packet_len)
         queue_work(sip->epub->esp_wkq, &sip->epub->tx_work);
 #else
         sip_tx_data_pkt_enqueue(sip->epub, skb);
+    #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 32))
         ieee80211_queue_work(sip->epub->hw, &sip->epub->tx_work);
+    #else
+        queue_work(sip->epub->esp_wkq, &sip->epub->tx_work);
+    #endif
 #endif
         return 0;
 }
@@ -355,10 +361,10 @@ static int esp_test_sdio_wr(struct sk_buff *skb_2,
         value = nla_get_u32(info->attrs[TEST_ATTR_PARA2]);
 
         if(!func_no) {
-                sdio_io_writeb( SIP->epub, (u8) value&0xff, addr, &res);
+		res = esp_common_writebyte_with_addr(SIP->epub, addr, (u8)value, ESP_SIF_SYNC);
         } else {
                 memcpy(sdio_buff, (u8 *)&value, 4);
-                res=sif_io_sync(SIP->epub, addr, sdio_buff, 4, SIF_TO_DEVICE | SIF_BYTE_BASIS | SIF_INC_ADDR);
+		res = esp_common_write_with_addr(SIP->epub, addr, sdio_buff, 4, ESP_SIF_SYNC);
         }
 
         /*directly send reply_info to target, and waiting for report*/
@@ -388,9 +394,9 @@ static int esp_test_sdio_rd(struct sk_buff *skb_2,
 
         if(!func_no) {
                 memset(sdio_buff, 0, 4);
-                sdio_buff[0]= sdio_io_readb(SIP->epub, addr, &res);
+                res = esp_common_readbyte_with_addr(SIP->epub, addr, &sdio_buff[0], ESP_SIF_SYNC);
         } else {
-                res=sif_io_sync(SIP->epub, addr, sdio_buff, 4, SIF_FROM_DEVICE | SIF_BYTE_BASIS | SIF_INC_ADDR);
+                res = esp_common_read_with_addr(SIP->epub, addr, sdio_buff, 4, ESP_SIF_SYNC);
         }
         memcpy((u8 *)&value, sdio_buff, 4);
 
@@ -510,6 +516,55 @@ static struct notifier_block test_netlink_notifier = {
         .notifier_call = esp_test_netlink_notify,
 };
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 31))
+/**
+ * copy from net/netlink/genetlink.c(linux kernel 2.6.32)
+ *
+ * genl_register_family_with_ops - register a generic netlink family
+ * @family: generic netlink family
+ * @ops: operations to be registered
+ * @n_ops: number of elements to register
+ * 
+ * Registers the specified family and operations from the specified table.
+ * Only one family may be registered with the same family name or identifier.
+ * 
+ * The family id may equal GENL_ID_GENERATE causing an unique id to
+ * be automatically generated and assigned.
+ * 
+ * Either a doit or dumpit callback must be specified for every registered
+ * operation or the function will fail. Only one operation structure per
+ * command identifier may be registered.
+ * 
+ * See include/net/genetlink.h for more documenation on the operations
+ * structure.
+ * 
+ * This is equivalent to calling genl_register_family() followed by
+ * genl_register_ops() for every operation entry in the table taking
+ * care to unregister the family on error path.
+ * 
+ * Return 0 on success or a negative error code.
+ */
+int genl_register_family_with_ops(struct genl_family *family,
+        struct genl_ops *ops, size_t n_ops)
+{
+    int err, i;
+
+    err = genl_register_family(family);
+    if (err)
+        return err;
+
+    for (i = 0; i < n_ops; ++i, ++ops) {
+        err = genl_register_ops(family, ops);
+        if (err)
+            goto err_out;
+    }
+    return 0;
+err_out:
+    genl_unregister_family(family);
+    return err;
+}
+#endif
+
 int test_init_netlink(struct esp_sip *sip)
 {
         int rc;
@@ -544,6 +599,9 @@ void test_exit_netlink(void)
 		return;
 
         kfree(sdio_buff);
+	sdio_buff = NULL;
+	sip_copy = NULL;
+	
         printk(KERN_INFO "esp_sdio: closing netlink\n");
         /* unregister the notifier */
         netlink_unregister_notifier(&test_netlink_notifier);
