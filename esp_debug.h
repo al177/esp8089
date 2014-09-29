@@ -5,12 +5,9 @@
 
 #ifndef _DEBUG_H_
 
-#ifdef ASSERT_PANIC
-#define ESSERT(v) BUG_ON(!(v))
-#else
-#define ESSERT(v) WARN_ON(!(v))
-#endif 
+#define assert(v) BUG_ON(!(v))
 
+#define ASSERT(v) BUG_ON(!(v))
 
 #include <linux/slab.h>
 #include <linux/debugfs.h>
@@ -45,7 +42,6 @@ enum {
         ESP_DBG_TXAMPDU = BIT(5),
         ESP_DBG_OP = BIT(6),
 	ESP_DBG_PS = BIT(7),
-	ESP_ATE = BIT(8),
         ESP_DBG_ALL = 0xffffffff
 };
 

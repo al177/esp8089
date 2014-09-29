@@ -31,8 +31,7 @@ struct esp_mac_rx_ctrl {
         unsigned rxend_state:8;
         unsigned ampdu_cnt:8;
         unsigned channel:4;
-        unsigned:4;
-	signed noise_floor:8;
+        unsigned:12;
 };
 
 struct esp_rx_ampdu_len {

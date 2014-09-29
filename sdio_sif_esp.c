@@ -63,20 +63,16 @@ struct sif_req * sif_alloc_req(struct esp_sdio_ctrl *sctrl);
 
 void sif_lock_bus(struct esp_pub *epub)
 {
-        EPUB_FUNC_CHECK(epub, _exit);
+        EPUB_FUNC_CHECK(epub);
 
         sdio_claim_host(EPUB_TO_FUNC(epub));
-_exit:
-	return;
 }
 
 void sif_unlock_bus(struct esp_pub *epub)
 {
-        EPUB_FUNC_CHECK(epub, _exit);
+        EPUB_FUNC_CHECK(epub);
 
         sdio_release_host(EPUB_TO_FUNC(epub));
-_exit:
-	return;
 }
 
 #ifdef SDIO_TEST
@@ -167,19 +163,12 @@ int sif_io_raw(struct esp_pub *epub, u32 addr, u8 *buf, u32 len, u32 flag)
         struct esp_sdio_ctrl *sctrl = NULL;
         struct sdio_func *func = NULL;
 
-	if (epub == NULL || buf == NULL) {
-        	ESSERT(0);
-		err = -EINVAL;
-		goto _exit;
-	}
+        ASSERT(epub != NULL);
+        ASSERT(buf != NULL);
 
         sctrl = (struct esp_sdio_ctrl *)epub->sif;
         func = sctrl->func;
-	if (func == NULL) {
-		ESSERT(0);
-		err = -EINVAL;
-		goto _exit;
-	}
+        ASSERT(func != NULL);
 
         if (bad_buf(buf)) {
                 esp_dbg(ESP_DBG_TRACE, "%s dst 0x%08x, len %d badbuf\n", __func__, addr, len);
@@ -217,7 +206,6 @@ int sif_io_raw(struct esp_pub *epub, u32 addr, u8 *buf, u32 len, u32 flag)
                         memcpy(buf, ibuf, len);
         }
 
-_exit:
        return err;
 }
 
@@ -229,19 +217,12 @@ int sif_io_sync(struct esp_pub *epub, u32 addr, u8 *buf, u32 len, u32 flag)
         struct esp_sdio_ctrl *sctrl = NULL;
         struct sdio_func *func = NULL;
 
-	if (epub == NULL || buf == NULL) {
-        	ESSERT(0);
-		err = -EINVAL;
-		goto _exit;
-	}
+        ASSERT(epub != NULL);
+        ASSERT(buf != NULL);
 
         sctrl = (struct esp_sdio_ctrl *)epub->sif;
         func = sctrl->func;
-	if (func == NULL) {
-		ESSERT(0);	
-		err = -EINVAL;
-		goto _exit;
-	}
+        ASSERT(func != NULL);
 
         if (bad_buf(buf)) {
                 esp_dbg(ESP_DBG_TRACE, "%s dst 0x%08x, len %d badbuf\n", __func__, addr, len);
@@ -288,7 +269,6 @@ int sif_io_sync(struct esp_pub *epub, u32 addr, u8 *buf, u32 len, u32 flag)
                         memcpy(buf, ibuf, len);
         }
 
-_exit:
         return err;
 }
 
@@ -297,10 +277,8 @@ int sif_lldesc_read_sync(struct esp_pub *epub, u8 *buf, u32 len)
         struct esp_sdio_ctrl *sctrl = NULL;
         u32 read_len;
 
-	if (epub == NULL || buf == NULL) {
-        	ESSERT(0);
-		return -EINVAL;
-	}
+        ASSERT(epub != NULL);
+        ASSERT(buf != NULL);
 
         sctrl = (struct esp_sdio_ctrl *)epub->sif;
 
@@ -324,10 +302,8 @@ int sif_lldesc_write_sync(struct esp_pub *epub, u8 *buf, u32 len)
         struct esp_sdio_ctrl *sctrl = NULL;
         u32 write_len;
 
-	if (epub == NULL || buf == NULL) {
-        	ESSERT(0);
-		return -EINVAL;
-	}
+        ASSERT(epub != NULL);
+        ASSERT(buf != NULL);
 
         sctrl = (struct esp_sdio_ctrl *)epub->sif;
 
@@ -351,10 +327,8 @@ int sif_lldesc_read_raw(struct esp_pub *epub, u8 *buf, u32 len, bool noround)
         struct esp_sdio_ctrl *sctrl = NULL;
         u32 read_len;
 
-	if (epub == NULL || buf == NULL) {
-        	ESSERT(0);
-		return -EINVAL;
-	}
+        ASSERT(epub != NULL);
+        ASSERT(buf != NULL);
 
         sctrl = (struct esp_sdio_ctrl *)epub->sif;
 
@@ -381,10 +355,8 @@ int sif_lldesc_write_raw(struct esp_pub *epub, u8 *buf, u32 len)
         struct esp_sdio_ctrl *sctrl = NULL;
         u32 write_len;
 
-	if (epub == NULL || buf == NULL) {
-        	ESSERT(0);
-		return -EINVAL;
-	}
+        ASSERT(epub != NULL);
+        ASSERT(buf != NULL);
 
         sctrl = (struct esp_sdio_ctrl *)epub->sif;
 
@@ -415,6 +387,8 @@ static const struct sdio_device_id esp_sdio_devices[] = {
 static int esdio_power_on(struct esp_sdio_ctrl *sctrl)
 {
         int err = 0;
+
+        assert(sctrl != NULL);
 
         if (sctrl->off == false)
                 return err;
@@ -552,6 +526,7 @@ static int esp_sdio_probe(struct sdio_func *func, const struct sdio_device_id *i
 		sctrl = kzalloc(sizeof(struct esp_sdio_ctrl), GFP_KERNEL);
 
 		if (sctrl == NULL) {
+			assert(0);
 			return -ENOMEM;
 		}
 
@@ -559,7 +534,7 @@ static int esp_sdio_probe(struct sdio_func *func, const struct sdio_device_id *i
 		sctrl->dma_buffer = kzalloc(ESP_DMA_IBUFSZ, GFP_KERNEL);
 
 		if (sctrl->dma_buffer == NULL) {
-                	err = -ENOMEM;
+			assert(0);
 			goto _err_last;
 		}
 		sif_sctrl = sctrl;
@@ -574,18 +549,17 @@ static int esp_sdio_probe(struct sdio_func *func, const struct sdio_device_id *i
         	}
         	epub->sif = (void *)sctrl;
         	sctrl->epub = epub;
-
-#ifdef USE_EXT_GPIO
-		if (sif_get_ate_config() == 0) {
-			err = ext_gpio_init(epub);
-			if (err) {
-                		esp_dbg(ESP_DBG_ERROR, "ext_irq_work_init failed %d\n", err);
-				goto _err_epub;
-			}
+	
+#ifdef USE_EXT_GPIO	
+		err = ext_gpio_init(epub);
+		if (err) {
+                	esp_dbg(ESP_DBG_ERROR, "ext_irq_work_init failed %d\n", err);
+			return err;
 		}
 #endif
-
+			
 	} else {
+		ASSERT(sif_sctrl != NULL);
 		sctrl = sif_sctrl;
 		sif_sctrl = NULL;
 		epub = sctrl->epub;
@@ -609,8 +583,8 @@ static int esp_sdio_probe(struct sdio_func *func, const struct sdio_device_id *i
 
         if (err){
                 if(sif_sdio_state == ESP_SDIO_STATE_FIRST_INIT)
-                	goto _err_ext_gpio;
-		else
+                	goto _err_epub;
+		  else
 			goto _err_second_init;
         }
         check_target_id(epub);
@@ -623,10 +597,7 @@ static int esp_sdio_probe(struct sdio_func *func, const struct sdio_device_id *i
                 esp_dbg(ESP_DBG_ERROR, "Set sdio block size %d failed: %d)\n",
                                 sctrl->slc_blk_sz, err);
                 sdio_release_host(func);
-                if(sif_sdio_state == ESP_SDIO_STATE_FIRST_INIT)
-                	goto _err_off;
-		else
-			goto _err_second_init;
+                goto _err_off;
         }
 
         sdio_release_host(func);
@@ -644,10 +615,6 @@ static int esp_sdio_probe(struct sdio_func *func, const struct sdio_device_id *i
 
         if (err) {
                 esp_dbg(ESP_DBG_ERROR, "esp_init_all failed: %d\n", err);
-                if(sif_sdio_state == ESP_SDIO_STATE_FIRST_INIT){
-			err = 0;
-			goto _err_first_init;
-		}
                 if(sif_sdio_state == ESP_SDIO_STATE_SECOND_INIT)
 			goto _err_second_init;
         }
@@ -664,20 +631,14 @@ static int esp_sdio_probe(struct sdio_func *func, const struct sdio_device_id *i
 
 _err_off:
         esdio_power_off(sctrl);
-_err_ext_gpio:
-#ifdef USE_EXT_GPIO
-	if (sif_get_ate_config() == 0)
-		ext_gpio_deinit();
 _err_epub:
-#endif
         esp_pub_dealloc_mac80211(epub);
 _err_dma:
         kfree(sctrl->dma_buffer);
 _err_last:
         kfree(sctrl);
-_err_first_init:
+
 	if(sif_sdio_state == ESP_SDIO_STATE_FIRST_INIT){
-		esp_dbg(ESP_DBG_ERROR, "first error exit\n");
 		sif_sdio_state = ESP_SDIO_STATE_FIRST_ERROR_EXIT;
 		up(&esp_powerup_sem);
 	}
@@ -706,15 +667,22 @@ static void esp_sdio_remove(struct sdio_func *func)
                 }
 		sctrl->epub->sdio_state = sif_sdio_state;
 		if(sif_sdio_state != ESP_SDIO_STATE_FIRST_NORMAL_EXIT){
+			do{
+				int err;
+				sif_lock_bus(sctrl->epub);
+				sif_raw_dummy_read(sctrl->epub);
+				err = sif_interrupt_target(sctrl->epub, 7);
+				sif_unlock_bus(sctrl->epub);
+			}while(0);
+	
                 	if (sctrl->epub->sip) {
                         	sip_detach(sctrl->epub->sip);
                         	sctrl->epub->sip = NULL;
                         	esp_dbg(ESP_DBG_TRACE, "%s sip detached \n", __func__);
-                	}
 #ifdef USE_EXT_GPIO	
-			if (sif_get_ate_config() == 0)
 				ext_gpio_deinit();
 #endif
+                	}
 		} else {
 			//sif_disable_target_interrupt(sctrl->epub);
 			atomic_set(&sctrl->epub->sip->state, SIP_STOP);
@@ -907,20 +875,21 @@ static int /*__init*/ esp_sdio_init(void)
         esp_dbg(ESP_SHOW, "%s power up OK\n", __func__);
 
         sdio_unregister_driver(&esp_sdio_dummy_driver);
-        
+
         sif_sdio_state = ESP_SDIO_STATE_FIRST_INIT;
-	sema_init(&esp_powerup_sem, 0);
+        sema_init(&esp_powerup_sem, 0);
 
         sdio_register_driver(&esp_sdio_driver);
 
-        if ((down_timeout(&esp_powerup_sem,
-                                 msecs_to_jiffies(ESP_WAIT_UP_TIME_MS)) == 0 ) && sif_get_ate_config() == 0) {
+        if (down_timeout(&esp_powerup_sem,
+                                 msecs_to_jiffies(ESP_WAIT_UP_TIME_MS)) == 0) 
+	{
 		if(sif_sdio_state == ESP_SDIO_STATE_FIRST_NORMAL_EXIT){
                 	sdio_unregister_driver(&esp_sdio_driver);
 
                 	sif_platform_rescan_card(0);
 
-			msleep(100);
+			msleep(80);
                 
 			sif_platform_rescan_card(1);
 

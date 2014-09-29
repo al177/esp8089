@@ -137,7 +137,6 @@ typedef struct esp_hw_idx_map {
 
 #define ESP_PUB_MAX_VIF		2
 #define ESP_PUB_MAX_STA		4 //for one interface
-#define ESP_PUB_MAX_RXAMPDU	8 //for all interfaces
 
 enum {
         ESP_PM_OFF = 0,
@@ -179,7 +178,6 @@ struct esp_pub {
         /* latest mac80211 has multiple tx queue, but we stick with single queue now */
         spinlock_t rx_lock;
         spinlock_t tx_ampdu_lock;
-        spinlock_t rx_ampdu_lock;
 	spinlock_t tx_lock;
         struct mutex tx_mtx;
         struct sk_buff_head txq;
@@ -199,17 +197,12 @@ struct esp_pub {
         bool scan_permit_valid;
         struct delayed_work scan_timeout_work;
 	u8 enodes_map;
-	u8 rxampdu_map;
 	u8 enodes_maps[ESP_PUB_MAX_VIF];
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 28))
         struct esp_node nodes[ESP_PUB_MAX_STA + 1];
 #endif
         struct esp_node * enodes[ESP_PUB_MAX_STA + 1];
-	struct esp_node * rxampdu_node[ESP_PUB_MAX_RXAMPDU];
-	u8 rxampdu_tid[ESP_PUB_MAX_RXAMPDU];
 	struct esp_ps ps;
-    int enable_int;
-    int wait_reset;
 };
 
 typedef struct esp_pub esp_pub_t;
@@ -236,13 +229,10 @@ void esp_wakelock_destroy(void);
 void esp_wake_lock(void);
 void esp_wake_unlock(void);
 struct esp_node * esp_get_node_by_addr(struct esp_pub * epub, const u8 *addr);
-int esp_get_empty_rxampdu(struct esp_pub * epub, const u8 *addr, u8 tid);
-int esp_get_exist_rxampdu(struct esp_pub * epub, const u8 *addr, u8 tid);
 
 #ifdef TEST_MODE
 int test_init_netlink(struct esp_sip *sip);
 void test_exit_netlink(void);
 void esp_test_cmd_event(u32 cmd_type, char *reply_info);
-void esp_test_init(struct esp_pub *epub);
 #endif
 #endif /* _ESP_PUB_H_ */
