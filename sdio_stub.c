@@ -7,7 +7,7 @@
 #include <mach/gpio.h>
 #include <mach/iomux.h>
 
-#define ESP8089_DRV_VERSION "1.03"
+#define ESP8089_DRV_VERSION "1.9"
 
 extern int rk29sdk_wifi_power(int on);
 extern int rk29sdk_wifi_set_carddetect(int val);
@@ -55,7 +55,7 @@ void sif_platform_target_poweroff(void)
 	printk("=======================================================\n");
 	printk("==== Dislaunching Wi-Fi driver! (Powered by Rockchip) ====\n");
 	printk("=======================================================\n");
-	printk("Espressif ESP8089 SDIO WiFi driver (Powered by Rockchip,Ver %s) init.\n", ESP8089_DRV_VERSION);
+	printk("Espressif ESP8089 SDIO WiFi driver (Powered by Rockchip,Ver %s (11272014)) init.\n", ESP8089_DRV_VERSION);
 
 	//rk29sdk_wifi_set_carddetect(0);
 	if(sif_get_bt_config() != 1)
@@ -67,7 +67,7 @@ void sif_platform_target_poweron(void)
 	printk("=======================================================\n");
 	printk("==== Launching Wi-Fi driver! (Powered by Rockchip) ====\n");
 	printk("=======================================================\n");
-	printk("Espressif ESP8089 SDIO WiFi driver (Powered by Rockchip,Ver %s) init.\n", ESP8089_DRV_VERSION);
+	printk("Espressif ESP8089 SDIO WiFi driver (Powered by Rockchip,Ver %s (11272014)) init.\n", ESP8089_DRV_VERSION);
 
 	if(sif_get_bt_config() == 1){
 		sif_platform_reset_target();

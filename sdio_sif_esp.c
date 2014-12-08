@@ -27,9 +27,7 @@
 #include "slc_host_register.h"
 #include "esp_version.h"
 #include "esp_ctrl.h"
-#ifdef ANDROID
-#include "esp_android.h"
-#endif /* ANDROID */
+#include "esp_file.h"
 #ifdef USE_EXT_GPIO
 #include "esp_ext.h"
 #endif /* USE_EXT_GPIO */
@@ -57,8 +55,6 @@ static int esdio_power_on(struct esp_sdio_ctrl *sctrl);
 
 void sif_set_clock(struct sdio_func *func, int clk);
 
-struct sif_req * sif_alloc_req(struct esp_sdio_ctrl *sctrl);
-
 #include "sdio_stub.c"
 
 void sif_lock_bus(struct esp_pub *epub)
@@ -78,54 +74,6 @@ void sif_unlock_bus(struct esp_pub *epub)
 _exit:
 	return;
 }
-
-#ifdef SDIO_TEST
-static void sif_test_tx(struct esp_sdio_ctrl *sctrl)
-{
-        int i, err = 0;
-
-        for (i = 0; i < 500; i++) {
-                sctrl->dma_buffer[i] = i;
-        }
-
-        sdio_claim_host(sctrl->func);
-        err = sdio_memcpy_toio(sctrl->func, 0x10001 - 500, sctrl->dma_buffer, 500);
-        sif_platform_check_r1_ready(sctrl->epub);
-        sdio_release_host(sctrl->func);
-
-        esp_dbg(ESP_DBG, "%s toio err %d\n", __func__, err);
-}
-
-static void sif_test_dsr(struct sdio_func *func)
-{
-        struct esp_sdio_ctrl *sctrl = sdio_get_drvdata(func);
-
-        sdio_release_host(sctrl->func);
-
-        /* no need to read out registers in normal operation any more */
-        //sif_io_sync(sctrl->epub, SIF_SLC_WINDOW_END_ADDR - 64, sctrl->dma_buffer, 64, SIF_FROM_DEVICE | SIF_INC_ADDR | SIF_SYNC | SIF_BYTE_BASIS);
-        //
-        esp_dsr(sctrl->epub);
-
-        sdio_claim_host(func);
-
-        //show_buf(sctrl->dma_buffer, 64);
-}
-
-void sif_test_rx(struct esp_sdio_ctrl *sctrl)
-{
-        int err = 0;
-
-        sdio_claim_host(sctrl->func);
-
-        err = sdio_claim_irq(sctrl->func, sif_test_dsr);
-
-        if (err)
-                esp_dbg(ESP_DBG_ERROR, "sif %s failed\n", __func__);
-
-        sdio_release_host(sctrl->func);
-}
-#endif //SDIO_TEST
 
 static inline bool bad_buf(u8 * buf)
 {
@@ -631,10 +579,6 @@ static int esp_sdio_probe(struct sdio_func *func, const struct sdio_device_id *i
 
         sdio_release_host(func);
 
-#ifdef SDIO_TEST
-        sif_test_tx(sctrl);
-#else
-
 #ifdef LOWER_CLK 
         /* fix clock for dongle */
 	sif_set_clock(func, 23);
@@ -652,7 +596,6 @@ static int esp_sdio_probe(struct sdio_func *func, const struct sdio_device_id *i
 			goto _err_second_init;
         }
 
-#endif //SDIO_TEST
         esp_dbg(ESP_DBG_TRACE, " %s return  %d\n", __func__, err);
 	if(sif_sdio_state == ESP_SDIO_STATE_FIRST_INIT){
 		esp_dbg(ESP_DBG_ERROR, "first normal exit\n");
@@ -691,6 +634,8 @@ _err_second_init:
 static void esp_sdio_remove(struct sdio_func *func) 
 {
         struct esp_sdio_ctrl *sctrl = NULL;
+
+	esp_dbg(ESP_SHOW, "%s enter\n", __func__);
 
         sctrl = sdio_get_drvdata(func);
 
@@ -856,9 +801,7 @@ static int /*__init*/ esp_sdio_init(void)
 #endif
         edf_ret = esp_debugfs_init();
 
-#ifdef ANDROID
-	android_request_init_conf();
-#endif /* defined(ANDROID)*/
+	request_init_conf();
 
         esp_wakelock_init();
         esp_wake_lock();
@@ -945,7 +888,7 @@ _fail:
 
 static void  /*__exit*/ esp_sdio_exit(void) 
 {
-	esp_dbg(ESP_DBG_TRACE, "%s \n", __func__);
+	esp_dbg(ESP_SHOW, "%s \n", __func__);
 
 	esp_debugfs_exit();
 	
