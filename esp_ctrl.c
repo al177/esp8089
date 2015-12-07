@@ -80,6 +80,7 @@ static void esp_tx_ba_session_op(struct esp_sip *sip, struct esp_node *node, trc
         }
 }
 
+#ifdef TEST_MODE
 int sip_parse_event_debug(struct esp_pub *epub, const u8 *src, u8 *dst)
 {
 	struct sip_evt_debug* debug_evt =  (struct sip_evt_debug *)(src + SIP_CTRL_HDR_LEN);
@@ -125,6 +126,8 @@ int sip_parse_event_debug(struct esp_pub *epub, const u8 *src, u8 *dst)
 
 	return 0;
 }
+#endif /*TEST_MODE*/
+
 
 int sip_parse_events(struct esp_sip *sip, u8 *buf)
 {
@@ -294,6 +297,7 @@ int sip_parse_events(struct esp_sip *sip, u8 *buf)
                 break;
         }
 
+#ifdef TEST_MODE
 	case SIP_EVT_EP: {
 		char *ep = (char *)(buf + SIP_CTRL_HDR_LEN);
 		static int counter = 0;
@@ -307,6 +311,8 @@ int sip_parse_events(struct esp_sip *sip, u8 *buf)
 
 		break;
 	}
+#endif /*TEST_MODE*/
+
 	case SIP_EVT_INIT_EP: {
 		char *ep = (char *)(buf + SIP_CTRL_HDR_LEN);
 		esp_dbg(ESP_ATE, "Phy Init: %s \n", ep);

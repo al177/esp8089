@@ -724,9 +724,6 @@ static void esp_op_configure_filter(struct ieee80211_hw *hw,
 
         epub->rx_filter = 0;
 
-        if (*total_flags & FIF_PROMISC_IN_BSS)
-                epub->rx_filter |= FIF_PROMISC_IN_BSS;
-
         if (*total_flags & FIF_ALLMULTI)
                 epub->rx_filter |= FIF_ALLMULTI;
 
@@ -1508,7 +1505,9 @@ static int esp_op_set_bitrate_mask(struct ieee80211_hw *hw, struct ieee80211_vif
 }
 #endif
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 10, 0))        
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0))
+void esp_op_flush(struct ieee80211_hw *hw, struct ieee80211_vif *vif, u32 queues, bool drop)
+#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 10, 0))        
 void esp_op_flush(struct ieee80211_hw *hw, u32 queues, bool drop)
 #else
 void esp_op_flush(struct ieee80211_hw *hw, bool drop)
@@ -2076,9 +2075,15 @@ esp_pub_init_mac80211(struct esp_pub *epub)
         };
 #endif
 
-        hw->channel_change_time = 420000; /* in us */
         hw->max_listen_interval = 10;
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 2, 0 ))
+	ieee80211_hw_set(hw, SIGNAL_DBM);
+	ieee80211_hw_set(hw, HAS_RATE_CONTROL);	
+	ieee80211_hw_set(hw, SUPPORTS_PS);
+	ieee80211_hw_set(hw, AMPDU_AGGREGATION);
+	ieee80211_hw_set(hw, HOST_BROADCAST_PS_BUFFERING);
+#else
         hw->flags = IEEE80211_HW_SIGNAL_DBM |
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 33))
                     IEEE80211_HW_HAS_RATE_CONTROL |
@@ -2090,6 +2095,7 @@ esp_pub_init_mac80211(struct esp_pub *epub)
                 IEEE80211_HW_AMPDU_AGGREGATION |
 #endif
 				IEEE80211_HW_HOST_BROADCAST_PS_BUFFERING;
+#endif /*Linux 4.2.0*/
    //IEEE80211_HW_PS_NULLFUNC_STACK |	
         //IEEE80211_HW_CONNECTION_MONITOR |
         //IEEE80211_HW_BEACON_FILTER |
