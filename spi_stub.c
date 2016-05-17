@@ -8,7 +8,7 @@
 #include <mach/io.h>
 #include <mach/iomux.h>
 #include <mach/pmu.h>
-#include <mach/gpio.h>
+#include <linux/gpio.h>
 #include <asm/gpio.h>
 #include <asm/mach/irq.h>
 
