@@ -4,7 +4,7 @@
  *  sdio stub code for RK
  */
 
-#include <mach/gpio.h>
+#include <linux/gpio.h>
 //#include <mach/iomux.h>
 
 #define ESP8089_DRV_VERSION "1.9"
