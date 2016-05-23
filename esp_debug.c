@@ -88,7 +88,7 @@ struct dentry *esp_dump_var(const char *name, struct dentry *parent, void *value
                 rc = debugfs_create_u64(name, mode, parent, (u64*)value);
                 break;
         case ESP_BOOL:
-                rc = debugfs_create_bool(name, mode, parent, (u32*)value);
+                rc = debugfs_create_bool(name, mode, parent, (bool*)value);
                 break;
         default: //32
                 rc = debugfs_create_u32(name, mode, parent, (u32*)value);
