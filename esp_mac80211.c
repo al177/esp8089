@@ -54,7 +54,7 @@ esp_op_tx(struct ieee80211_hw *hw, struct sk_buff *skb)
 			hw->conf.channel_type != NL80211_CHAN_NO_HT
 #else
 			!(hw->conf.flags&IEEE80211_CONF_SUPPORT_HT_MODE)
-#endif                
+#endif
 	   ) {
 		struct ieee80211_tx_info * tx_info = IEEE80211_SKB_CB(skb);
 		struct ieee80211_hdr * wh = (struct ieee80211_hdr *)skb->data;
@@ -1569,17 +1569,30 @@ static int esp_op_ampdu_action(struct ieee80211_hw *hw,
                                struct ieee80211_sta *sta, u16 tid, u16 *ssn,
                                u8 buf_size)
 #else
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 6, 0))
 static int esp_op_ampdu_action(struct ieee80211_hw *hw,
                                struct ieee80211_vif *vif,
                                enum ieee80211_ampdu_mlme_action action,
                                struct ieee80211_sta *sta, u16 tid, u16 *ssn,
                                u8 buf_size, bool amsdu)
+#else
+static int esp_op_ampdu_action(struct ieee80211_hw *hw,
+                               struct ieee80211_vif *vif,
+                               struct ieee80211_ampdu_params *params)
+#endif
 #endif
 #endif
 #endif /* NEW_KERNEL && KERNEL_35 */
 {
         int ret = -EOPNOTSUPP;
         struct esp_pub *epub = (struct esp_pub *)hw->priv;
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0))
+	enum ieee80211_ampdu_mlme_action action = params->action;
+	struct ieee80211_sta *sta = params->sta;
+	u16 tid = params->tid;
+	u16 *ssn = &params->ssn;
+	u8 buf_size = params->buf_size;
+#endif
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28))
         struct esp_node * node = (struct esp_node *)sta->drv_priv;
 #else
