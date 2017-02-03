@@ -13,6 +13,7 @@ Modified to build as a standalone module for SDIO devices.
 Building:
 
  make
+ 
  sudo make install
 
 Using:
