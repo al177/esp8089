@@ -13,12 +13,24 @@
 #include <linux/sched.h>
 #include <net/mac80211.h>
 #include <net/cfg80211.h>
+#include <linux/nl80211.h>
 #include <linux/version.h>
 #include "sip2_common.h"
 
 // to support kernel < 2.6.28 there's no ieee80211_sta
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 28))
 #include <net/wireless.h>
+#endif
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0))
+enum ieee80211_band {
+    IEEE80211_BAND_2GHZ = NL80211_BAND_2GHZ,
+    IEEE80211_BAND_5GHZ = NL80211_BAND_5GHZ,
+    IEEE80211_BAND_60GHZ = NL80211_BAND_60GHZ,
+
+    /* keep last */
+    IEEE80211_NUM_BANDS
+};
 #endif
 
 enum esp_sdio_state{

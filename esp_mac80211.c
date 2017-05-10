@@ -896,7 +896,13 @@ void hw_scan_done(struct esp_pub *epub, bool aborted)
 
         ESSERT(epub->wl.scan_req != NULL);
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 30))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0))
+        struct cfg80211_scan_info info = {
+            .scan_start_tsf = 0,
+            .aborted = aborted,
+        };
+        ieee80211_scan_completed(epub->hw, &info);
+#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 30))
         ieee80211_scan_completed(epub->hw, aborted);
 #else
         ieee80211_scan_completed(epub->hw);
@@ -924,7 +930,13 @@ static void hw_scan_timeout_report(struct work_struct *work)
                 epub->wl.scan_req = NULL;
         }
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 30))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0))
+        struct cfg80211_scan_info info = {
+            .scan_start_tsf = 0,
+            .aborted = aborted,
+        };
+        ieee80211_scan_completed(epub->hw, &info);
+#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 30))
         ieee80211_scan_completed(epub->hw, aborted);
 #else
         ieee80211_scan_completed(epub->hw);
