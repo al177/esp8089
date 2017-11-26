@@ -50,6 +50,12 @@ SRC_DIR=$(shell pwd)
 
 include $(KCONFIG)
 
+#Shouldn't fail when not having dkms.conf in directory
+#(usually when installing a built package on other system)
+-include dkms.conf
+PACKAGE_NAME := $(patsubst "%",%,$(PACKAGE_NAME))
+PACKAGE_VERSION := $(patsubst "%",%,$(PACKAGE_VERSION))
+
 EXTRA_CFLAGS += -DDEBUG -DSIP_DEBUG -DFAST_TX_STATUS \
     -DKERNEL_IV_WAR -DRX_SENDUP_SYNC -DDEBUG_FS \
     -DSIF_DSR_WAR -DHAS_INIT_DATA -DHAS_FW 
@@ -86,6 +92,21 @@ config_check:
 		echo "Wireless drivers will not work properly."; \
 		echo; echo; \
 	fi
+
+
+dkms:
+	$(MAKE) config_check
+	export DKMS_PATH=/usr/src/$(PACKAGE_NAME)-$(PACKAGE_VERSION)/ ;\
+	echo $$DKMS_PATH ;\
+        mkdir -p $$DKMS_PATH ;\
+	cp -r . $$DKMS_PATH ;\
+	cd $$DKMS_PATH ;\
+	dkms add -m $(PACKAGE_NAME) -v $(PACKAGE_VERSION) ;\
+	dkms build -m $(PACKAGE_NAME) -v $(PACKAGE_VERSION) ;\
+	dkms mkdsc -m $(PACKAGE_NAME) -v $(PACKAGE_VERSION) --source-only ;\
+	dkms mkdeb -m $(PACKAGE_NAME) -v $(PACKAGE_VERSION) --source-only
+	cp /var/lib/dkms/$(PACKAGE_NAME)/$(PACKAGE_VERSION)/deb/*.deb .
+
 
 modules:
 	$(MAKE) -C $(KBUILD) M=$(SRC_DIR)
