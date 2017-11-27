@@ -93,6 +93,8 @@ config_check:
 		echo; echo; \
 	fi
 
+# Taken from here:
+# http://www.xkyle.com/building-linux-packages-for-kernel-drivers/
 
 dkms:
 	$(MAKE) config_check
