@@ -8,6 +8,7 @@
 
 #include <linux/types.h>
 #include <linux/kernel.h>
+#include <linux/version.h>
 
 #include <net/mac80211.h>
 #include "sip2_common.h"
@@ -88,7 +89,11 @@ struct dentry *esp_dump_var(const char *name, struct dentry *parent, void *value
                 rc = debugfs_create_u64(name, mode, parent, (u64*)value);
                 break;
         case ESP_BOOL:
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 4, 0))
+                rc = debugfs_create_bool(name, mode, parent, (u32*)value);
+#else
                 rc = debugfs_create_bool(name, mode, parent, (bool*)value);
+#endif
                 break;
         default: //32
                 rc = debugfs_create_u32(name, mode, parent, (u32*)value);
