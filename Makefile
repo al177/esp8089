@@ -4,6 +4,7 @@ MODNAME = esp8089
 # kernel.  But it's the first approximation, as we will re-read the
 # version from the kernel sources.
 KVERS_UNAME ?= $(shell uname -r)
+KVERS_ARCH ?= $(shell arch)
 
 # KBUILD is the path to the Linux kernel build tree.  It is usually the
 # same as the kernel source tree, except when the kernel was compiled in
@@ -55,6 +56,7 @@ include $(KCONFIG)
 -include dkms.conf
 PACKAGE_NAME := $(patsubst "%",%,$(PACKAGE_NAME))
 PACKAGE_VERSION := $(patsubst "%",%,$(PACKAGE_VERSION))
+DKMS_PATH := /usr/src/$(PACKAGE_NAME)-$(PACKAGE_VERSION)/
 
 EXTRA_CFLAGS += -DDEBUG -DSIP_DEBUG -DFAST_TX_STATUS \
     -DKERNEL_IV_WAR -DRX_SENDUP_SYNC -DDEBUG_FS \
@@ -98,17 +100,22 @@ config_check:
 
 dkms:
 	$(MAKE) config_check
-	export DKMS_PATH=/usr/src/$(PACKAGE_NAME)-$(PACKAGE_VERSION)/ ;\
-	echo $$DKMS_PATH ;\
-        mkdir -p $$DKMS_PATH ;\
-	cp -r . $$DKMS_PATH ;\
-	cd $$DKMS_PATH ;\
-	dkms add -m $(PACKAGE_NAME) -v $(PACKAGE_VERSION) ;\
-	dkms build -m $(PACKAGE_NAME) -v $(PACKAGE_VERSION) ;\
-	dkms mkdsc -m $(PACKAGE_NAME) -v $(PACKAGE_VERSION) --source-only ;\
-	dkms mkdeb -m $(PACKAGE_NAME) -v $(PACKAGE_VERSION) --source-only
+	echo $(DKMS_PATH)
+	echo "$(KVERS_UNAME)"
+	mkdir -p $(DKMS_PATH)
+	cp -r . $(DKMS_PATH)
+	dkms add -m $(PACKAGE_NAME) -v $(PACKAGE_VERSION)
+	dkms build -m $(PACKAGE_NAME) -v $(PACKAGE_VERSION)
+
+dkmsdeb: dkms
+	dkms mkdsc -m $(PACKAGE_NAME) -v $(PACKAGE_VERSION) --source-only
+	dkms mkdeb -m $(PACKAGE_NAME) -v $(PACKAGE_VERSION) --source-only 
 	cp /var/lib/dkms/$(PACKAGE_NAME)/$(PACKAGE_VERSION)/deb/*.deb .
 
+cleandkms:
+	-dkms uninstall $(PACKAGE_NAME)/$(PACKAGE_VERSION)
+	-dkms remove $(PACKAGE_NAME)/$(PACKAGE_VERSION) --all
+	-rm -rf /var/lib/dkms/$(PACKAGE_NAME)/$(PACKAGE_VERSION) $(DKMS_PATH)
 
 modules:
 	$(MAKE) -C $(KBUILD) M=$(SRC_DIR)
