@@ -104,6 +104,9 @@ dkms:
 	echo "$(KVERS_UNAME)"
 	mkdir -p $(DKMS_PATH)
 	cp -r . $(DKMS_PATH)
+	-rm -rf $(DKMS_PATH)/.git
+	-rm $(DKMS_PATH)/.gitignore
+	-rm $(DKMS_PATH)/*deb
 	dkms add -m $(PACKAGE_NAME) -v $(PACKAGE_VERSION)
 	dkms build -m $(PACKAGE_NAME) -v $(PACKAGE_VERSION)
 
