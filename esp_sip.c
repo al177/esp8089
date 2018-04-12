@@ -1612,10 +1612,18 @@ static int sip_parse_mac_rx_info(struct esp_sip *sip, struct esp_mac_rx_ctrl * m
         if (mac_ctrl->sig_mode) {
             // 2.6.27 has RX_FLAG_RADIOTAP in enum mac80211_rx_flags in include/net/mac80211.h
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29))                
+# if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 12, 0))
                 rx_status->flag |= RX_FLAG_HT;
+# else
+                rx_status->encoding = RX_ENC_HT;
+# endif
                 rx_status->rate_idx = mac_ctrl->MCS;
                 if(mac_ctrl->SGI)
+# if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 12, 0))
                         rx_status->flag |= RX_FLAG_SHORT_GI;
+# else
+                        rx_status->enc_flags |= RX_ENC_FLAG_SHORT_GI;
+# endif
 #else
                 rx_status->rate_idx = esp_wmac_rate2idx(0xc);//ESP_RATE_54
 #endif
