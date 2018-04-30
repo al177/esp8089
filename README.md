@@ -48,17 +48,13 @@ The module will be named esp8089-dkms_*.deb.  Don't forget to update the version
 in dkms.conf and committing before making a release!
 
 
-If the build fails to create a source package, try applying the following patch from https://bugs.launchpad.net/ubuntu/+source/dkms/+bug/1729051:
+If the build fails to create a source package, try installing dkms from github:
 
---- a/etc/dkms/template-dkms-mkdeb/debian/control	2017-10-31 14:40:41.690069116 -0300
-+++ b/etc/dkms/template-dkms-mkdeb/debian/control	2017-10-31 14:41:12.137973994 -0300
-@@ -6,6 +6,6 @@
- Standards-Version: 3.8.1
+sudo apt-get remove dkms
+sudo apt-get install devscripts quilt
+git clone https://github.com/dell/dkms.git
+cd dkms
+sed -ie "s/module-init-tools/kmod/g" debian/control
+make debs
 
- Package: DEBIAN_PACKAGE-dkms
--Architecture: all
-+Architecture: DEBIAN_BUILD_ARCH
- Depends: dkms (>= 1.95), ${misc:Depends}
- Description: DEBIAN_PACKAGE driver in DKMS format.
-
-
+and install the resulting package in dist/
