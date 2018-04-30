@@ -32,3 +32,33 @@ as root /etc/modprobe.d/esp.conf and add the line:
  options esp8089 esp_reset_gpio=5
 
 which changes the GPIO from 0 to 5.
+
+
+Building a Debian source package:
+
+To build a source package for release, first install the following:
+
+apt-get install debhelper dkms raspberrypi-kernel-headers
+
+Then build the package:
+
+sudo make dkmsdeb
+
+The module will be named esp8089-dkms_*.deb.  Don't forget to update the version
+in dkms.conf and committing before making a release!
+
+
+If the build fails to create a source package, try applying the following patch from https://bugs.launchpad.net/ubuntu/+source/dkms/+bug/1729051:
+
+--- a/etc/dkms/template-dkms-mkdeb/debian/control	2017-10-31 14:40:41.690069116 -0300
++++ b/etc/dkms/template-dkms-mkdeb/debian/control	2017-10-31 14:41:12.137973994 -0300
+@@ -6,6 +6,6 @@
+ Standards-Version: 3.8.1
+
+ Package: DEBIAN_PACKAGE-dkms
+-Architecture: all
++Architecture: DEBIAN_BUILD_ARCH
+ Depends: dkms (>= 1.95), ${misc:Depends}
+ Description: DEBIAN_PACKAGE driver in DKMS format.
+
+
