@@ -1670,7 +1670,7 @@ static int esp_op_ampdu_action(struct ieee80211_hw *hw,
 #endif
 #endif
                 break;
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 10, 0))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 9, 0))
 	case IEEE80211_AMPDU_TX_STOP_CONT:
 #else
         case IEEE80211_AMPDU_TX_STOP:
