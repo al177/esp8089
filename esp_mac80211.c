@@ -425,9 +425,18 @@ static bool beacon_tim_alter(struct sk_buff *beacon)
 
 unsigned long init_jiffies;
 unsigned long cycle_beacon_count;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0)
 static void drv_handle_beacon(unsigned long data)
+#else
+struct ieee80211_vif *_gvif = NULL;
+static void drv_handle_beacon(struct timer_list *list)
+#endif
 {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0)
 	struct ieee80211_vif *vif = (struct ieee80211_vif *) data;
+#else
+	struct ieee80211_vif *vif = (struct ieee80211_vif *) _gvif;
+#endif
 	struct esp_vif *evif = (struct esp_vif *)vif->drv_priv;
 	struct sk_buff *beacon;
 	struct sk_buff *skb;
@@ -479,16 +488,21 @@ static void init_beacon_timer(struct ieee80211_vif *vif)
 	ESP_IEEE80211_DBG(ESP_DBG_OP, " %s enter: beacon interval %x\n", __func__, evif->beacon_interval);
 
 	beacon_tim_init();
-	init_timer(&evif->beacon_timer);  //TBD, not init here...
-	cycle_beacon_count = 1;
-	init_jiffies = jiffies;
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28))
 	evif->beacon_timer.expires = init_jiffies + msecs_to_jiffies(cycle_beacon_count * vif->bss_conf.beacon_int*1024/1000);
 #else
 	evif->beacon_timer.expires = init_jiffies + msecs_to_jiffies(cycle_beacon_count * evif->beacon_interval*1024/1000);
 #endif
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0)
+        init_timer(&evif->beacon_timer);  //TBD, not init here...
+	cycle_beacon_count = 1;
+	init_jiffies = jiffies;
 	evif->beacon_timer.data = (unsigned long) vif;
 	evif->beacon_timer.function = drv_handle_beacon;
+#else
+	_gvif = vif;
+	timer_setup(&evif->beacon_timer, drv_handle_beacon, 0);
+#endif
 	add_timer(&evif->beacon_timer);
 }
 #endif
