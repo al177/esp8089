@@ -1291,7 +1291,7 @@ static void sip_tx_status_report(struct esp_sip *sip, struct sk_buff *skb, struc
                                 if ((tid->state == ESP_TID_STATE_INIT) && 
 						(TID_TO_AC(tidno) != WME_AC_VO) && tid->cnt >= 10) {
                                         tid->state = ESP_TID_STATE_TRIGGER;
-                                        esp_sip_dbg(ESP_DBG_ERROR, "start tx ba session,addr:%pM,tid:%u\n", wh->addr1, tidno);
+                                        esp_sip_dbg(ESP_DBG_TRACE, "start tx ba session,addr:%pM,tid:%u\n", wh->addr1, tidno);
                                         spin_unlock_bh(&sip->epub->tx_ampdu_lock);
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 28))
                                         ieee80211_start_tx_ba_session(sip->epub->hw, wh->addr1, tidno);
