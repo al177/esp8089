@@ -1,5 +1,6 @@
 MODNAME = esp8089
 
+ifeq ($(KERNELRELEASE),)
 # By default, we try to compile the modules for the currently running
 # kernel.  But it's the first approximation, as we will re-read the
 # version from the kernel sources.
@@ -50,6 +51,7 @@ INST_DIR = /lib/modules/$(KVERS)/misc
 SRC_DIR=$(shell pwd)
 
 include $(KCONFIG)
+endif
 
 #Shouldn't fail when not having dkms.conf in directory
 #(usually when installing a built package on other system)
