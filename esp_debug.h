@@ -35,7 +35,7 @@ typedef enum esp_type {
         ESP_U64
 } esp_type;
 
-struct dentry *esp_dump_var(const char *name, struct dentry *parent, void *value, esp_type type);
+void esp_dump_var(const char *name, struct dentry *parent, void *value, esp_type type);
 
 struct dentry *esp_dump_array(const char *name, struct dentry *parent, struct debugfs_blob_wrapper *blob);
 
