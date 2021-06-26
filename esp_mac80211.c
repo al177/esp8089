@@ -369,7 +369,7 @@ u8 beacon_tim_saved[BEACON_TIM_SAVE_MAX];
 int beacon_tim_count;
 static void beacon_tim_init(void)
 {
-	memset(beacon_tim_saved, BEACON_TIM_SAVE_MAX, 0);
+	memset(beacon_tim_saved, 0, sizeof(u8) * BEACON_TIM_SAVE_MAX);
 	beacon_tim_count = 0;
 }
 
