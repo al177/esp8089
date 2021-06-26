@@ -916,15 +916,17 @@ static void esp_op_update_tkip_key(struct ieee80211_hw *hw,
 
 void hw_scan_done(struct esp_pub *epub, bool aborted)
 {
-        cancel_delayed_work_sync(&epub->scan_timeout_work);
-
-        ESSERT(epub->wl.scan_req != NULL);
-
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0))
         struct cfg80211_scan_info info = {
             .scan_start_tsf = 0,
             .aborted = aborted,
         };
+#endif
+        cancel_delayed_work_sync(&epub->scan_timeout_work);
+
+        ESSERT(epub->wl.scan_req != NULL);
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0))
         ieee80211_scan_completed(epub->hw, &info);
 #elif (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 30))
         ieee80211_scan_completed(epub->hw, aborted);
@@ -941,6 +943,12 @@ static void hw_scan_timeout_report(struct work_struct *work)
         struct esp_pub *epub =
                 container_of(work, struct esp_pub, scan_timeout_work.work);
         bool aborted;
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0))
+        struct cfg80211_scan_info info = {
+            .scan_start_tsf = 0,
+            .aborted = false,
+        };
+#endif
 
         ESP_IEEE80211_DBG(ESP_DBG_TRACE, "eagle hw scan done\n");
 
@@ -955,10 +963,7 @@ static void hw_scan_timeout_report(struct work_struct *work)
         }
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0))
-        struct cfg80211_scan_info info = {
-            .scan_start_tsf = 0,
-            .aborted = aborted,
-        };
+	info.aborted = aborted;
         ieee80211_scan_completed(epub->hw, &info);
 #elif (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 30))
         ieee80211_scan_completed(epub->hw, aborted);
