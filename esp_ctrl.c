@@ -474,17 +474,16 @@ int sip_send_ampdu_action(struct esp_pub *epub, u8 action_num, const u8 * addr, 
 	//for TX, it means interface index
 	action->index = ssn;
 
-        switch(action_num) {
-        case SIP_AMPDU_RX_START:
+        if (action_num == SIP_AMPDU_RX_START) {
                 action->ssn = ssn;
-        case SIP_AMPDU_RX_STOP:
+	}
+        if (action_num == SIP_AMPDU_RX_STOP) {
                 action->index = index;
-        case SIP_AMPDU_TX_OPERATIONAL:
-        case SIP_AMPDU_TX_STOP:
+	}
+        if ((action_num == SIP_AMPDU_TX_OPERATIONAL) || (action_num == SIP_AMPDU_TX_STOP)) {
                 action->win_size = buf_size;
                 action->tid = tid;
                 memcpy(action->addr, addr, ETH_ALEN);
-                break;
         }
 
         return sip_cmd_enqueue(epub->sip, skb, ENQUEUE_PRIOR_TAIL);
