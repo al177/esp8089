@@ -32,6 +32,7 @@
 
 int esp_readwrite_file(const char *filename, char *rbuf, const char *wbuf, size_t length)
 {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5,10,0)
         int ret = 0;
         struct file *filp = (struct file *)-ENOENT;
         mm_segment_t oldfs;
@@ -79,8 +80,13 @@ int esp_readwrite_file(const char *filename, char *rbuf, const char *wbuf, size_
                 filp_close(filp, NULL);
         }
         set_fs(oldfs);
+	return ret;
+#else
+	/* kernels 5.10.0+ deprecate set_fs(). And we don't really need to r/w files in
+	 * everyday use in this driver. So nop if we call this. */
+        return 0;
+#endif
 
-        return ret;
 }
 
 int esp_request_firmware(const struct firmware **firmware_p, const char *name,
@@ -192,9 +198,11 @@ int logger_write( const unsigned char prio,
         vec[2].iov_base   = (void *) msg;
         vec[2].iov_len    = strlen(msg) + 1;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5,10,0)
         oldfs = get_fs();
         set_fs(KERNEL_DS);
-        do {
+	oldfs = set_uaccess_begin();
+	do {
                 filp = filp_open("/dev/log/main", O_WRONLY, S_IRUSR);
                 if (IS_ERR(filp) || !filp->f_op) {
 
@@ -226,6 +234,11 @@ out_free_message:
         }
         return ret;
 }
+#else
+	/* kernels 5.10.0+ deprecate set_fs(). And we don't really need to r/w files in
+	 * everyday use in this driver. So nop if we call this. */
+        return 0;
+#endif
 #endif
 
 
