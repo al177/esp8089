@@ -488,6 +488,8 @@ static void init_beacon_timer(struct ieee80211_vif *vif)
 	ESP_IEEE80211_DBG(ESP_DBG_OP, " %s enter: beacon interval %x\n", __func__, evif->beacon_interval);
 
 	beacon_tim_init();
+	cycle_beacon_count = 1;
+	init_jiffies = jiffies;
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28))
 	evif->beacon_timer.expires = init_jiffies + msecs_to_jiffies(cycle_beacon_count * vif->bss_conf.beacon_int*1024/1000);
 #else
@@ -495,8 +497,6 @@ static void init_beacon_timer(struct ieee80211_vif *vif)
 #endif
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0)
         init_timer(&evif->beacon_timer);  //TBD, not init here...
-	cycle_beacon_count = 1;
-	init_jiffies = jiffies;
 	evif->beacon_timer.data = (unsigned long) vif;
 	evif->beacon_timer.function = drv_handle_beacon;
 #else
