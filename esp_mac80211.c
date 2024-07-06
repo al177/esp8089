@@ -1918,6 +1918,9 @@ static const struct ieee80211_ops esp_mac80211_ops = {
         .tx = esp_op_tx,
         .start = esp_op_start,
         .stop = esp_op_stop,
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0))
+	.wake_tx_queue = ieee80211_handle_wake_tx_queue,
+#endif
 #if (LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 39))        
 #ifdef CONFIG_PM
         .suspend = esp_op_suspend,
@@ -1983,6 +1986,7 @@ static const struct ieee80211_ops esp_mac80211_ops = {
 
 struct esp_pub * esp_pub_alloc_mac80211(struct device *dev)
 {
+
         struct ieee80211_hw *hw;
         struct esp_pub *epub;
         int ret = 0;
@@ -2232,7 +2236,7 @@ esp_pub_init_mac80211(struct esp_pub *epub)
 
 	atomic_set(&epub->wl.off, 1);
 
-        epub->wl.sbands[IEEE80211_BAND_2GHZ].band = IEEE80211_BAND_2GHZ;
+        epub->wl.sbands[IEEE80211_BAND_2GHZ].band = NL80211_BAND_2GHZ;
         epub->wl.sbands[IEEE80211_BAND_2GHZ].channels = esp_channels_2ghz;
         epub->wl.sbands[IEEE80211_BAND_2GHZ].bitrates = esp_rates_2ghz;
         epub->wl.sbands[IEEE80211_BAND_2GHZ].n_channels = ARRAY_SIZE(esp_channels_2ghz);
