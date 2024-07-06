@@ -4,10 +4,11 @@
  *  sdio stub code for RK
  */
 
-#include <linux/gpio.h>
+#include <linux/gpio/driver.h>
 #include <linux/delay.h>
 #include <linux/module.h>
 #include <linux/moduleparam.h>
+
 //#include <mach/iomux.h>
 
 /* reset GPIO parameter defaults to GPIO 0 (ID_SD) on the Raspberry Pi */
@@ -33,14 +34,33 @@ void sif_platform_rescan_card(unsigned insert)
 {
 }
 
+static int is_pi_gpio(struct gpio_chip *chip, void *data)
+{
+	if (strcmp(data, chip->label) == 0)
+		return 1;
+	return 0;
+}
+
+#define PINCTRL_CHIP "pinctrl-bcm2835"
+
 void sif_platform_reset_target(void)
 {
+
 	printk("ESP8089 reset via GPIO %d\n", esp_reset_gpio);
-	gpio_request(esp_reset_gpio,"esp_reset");
-	gpio_direction_output(esp_reset_gpio,0);
-	msleep(200);
-	gpio_direction_input(esp_reset_gpio);
-	gpio_free(esp_reset_gpio);
+
+	/* Temporary hack for GPIO access 'til I stop being lazy and get this
+	 * working with gpiod and a corresponding dt overlay. Embarrassingly
+	 * specific to Pi3 and earlier.
+	 */
+	struct gpio_chip *chip = gpiochip_find(PINCTRL_CHIP, is_pi_gpio);
+	if (!chip) {
+		printk("Couldn't find libgpio chip for GPIO!\n");
+	}
+	else {
+		chip->direction_output(chip, esp_reset_gpio, 0);
+		msleep(200);
+		chip->direction_input(chip, esp_reset_gpio);
+    	}
 }
 
 void sif_platform_target_poweroff(void)
